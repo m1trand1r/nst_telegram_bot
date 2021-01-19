@@ -3,3 +3,4 @@ venv/
 *.png
 model/__pycache__/
 model/test.py
+requirements.txt
