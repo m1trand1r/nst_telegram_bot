@@ -4,3 +4,4 @@ venv/
 model/__pycache__/
 model/test.py
 requirements.txt
+__pycache__/
