@@ -10,6 +10,7 @@ from aiogram.dispatcher.filters import Text
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.utils.executor import start_webhook, start_polling
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from asgiref.sync import sync_to_async
 from nst_class import NST
 import os
 
@@ -129,8 +130,8 @@ async def final_image(message: types.Message, state: FSMContext):
 
     await message.answer('Wait for 5 - 10 minutes, you will get message with ready picture')
     style_transfer = NST(holder.style, holder.content)
-    holder.res = style_transfer.compose()
-    img_data = holder.res  # изображение PIL
+    holder.res = sync_to_async(style_transfer.compose)()
+    img_data = await holder.res  # изображение PIL
     bio = io.BytesIO()
     bio.name = 'image.jpeg'
     img_data.save(bio, 'JPEG')
@@ -156,7 +157,7 @@ async def on_shutdown(dp: 'Dispatcher') -> None:
 
 if __name__ == '__main__':
     # start_polling(dp, skip_updates=True)
-    # logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO)
     start_webhook(
         dispatcher=dp,
         webhook_path=WEBHOOK_PATH,
