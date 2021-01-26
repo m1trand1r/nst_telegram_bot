@@ -104,10 +104,11 @@ def imshow(tensor, title=None):
     image = tensor.cpu().clone()
     image = image.squeeze(0)      # функция для отрисовки изображения
     image = unloader(image)
-    plt.imshow(image)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.001)
+    return image
+    # plt.imshow(image)
+    # if title is not None:
+    #     plt.title(title)
+    # plt.pause(0.001)
 
 
 def imsave(tensor, cnt):
