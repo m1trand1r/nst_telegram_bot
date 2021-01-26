@@ -146,13 +146,13 @@ async def echo_message(msg: types.Message):
     await bot.send_message(msg.from_user.id, msg.text)
 
 
-# async def on_startup(dp: 'Dispatcher') -> None:
-#     logging.warning('Starting connection. ')
-#     await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
-#
-#
-# async def on_shutdown(dp: 'Dispatcher') -> None:
-#     logging.warning('Bye! Shutting down webhook connection')
+async def on_startup(dp: 'Dispatcher') -> None:
+    logging.warning('Starting connection. ')
+    await bot.set_webhook(WEBHOOK_URL, drop_pending_updates=True)
+
+
+async def on_shutdown(dp: 'Dispatcher') -> None:
+    logging.warning('Bye! Shutting down webhook connection')
 
 if __name__ == '__main__':
     # start_polling(dp, skip_updates=True)
