@@ -4,11 +4,10 @@ import os
 
 
 class NST:
-    def __init__(self, path_style='D:\\python\\dls_bot\\images\\monk.jpg',
-                 path_content='D:\\python\\dls_bot\\images\\lisa.jpg'):
+    def __init__(self, style, content):
         self.prev_img = [1e10, None]
-        self.style_img = image_loader(path_style)
-        self.content_img = image_loader(path_content)
+        self.style_img = image_loader(style)
+        self.content_img = image_loader(content)
         self.cnn = models.vgg19(pretrained=True).features.to(device).eval()
         self.content_layers_default = ['conv_4']
         self.style_layers_default = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
@@ -64,7 +63,7 @@ class NST:
         self.model = self.model[:(i + 1)]
 
     def run_style_transfer(self) -> None:
-        num_steps = 800
+        num_steps = 500
         style_weight = 100000
         content_weight = 1
         input_img = self.content_img.clone()
@@ -101,13 +100,13 @@ class NST:
                 run[0] += 1
                 if style_score.item() + content_score.item() < self.prev_img[0]:
                     self.prev_img[0] = style_score.item() + content_score.item()
-                    self.prev_img[1] = input_img
+                    self.prev_img[1] = input_img.clone()
                 if run[0] % 50 == 0:
                     print("run {}:".format(run))
                     print('Style Loss : {:4f} Content Loss: {:4f}'.format(
                         style_score.item(), content_score.item()))
                     print()
-                    imsave(input_img, style_score.item() + content_score.item())
+                    # imsave(input_img, style_score.item() + content_score.item())
                     # imshow(input_img, title='step photo')
 
                 return style_score + content_score
