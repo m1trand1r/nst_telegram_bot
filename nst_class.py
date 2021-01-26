@@ -6,6 +6,7 @@ import os
 class NST:
     def __init__(self, path_style='D:\\python\\dls_bot\\images\\monk.jpg',
                  path_content='D:\\python\\dls_bot\\images\\lisa.jpg'):
+        self.prev_img = [1e10, None]
         self.style_img = image_loader(path_style)
         self.content_img = image_loader(path_content)
         self.cnn = models.vgg19(pretrained=True).features.to(device).eval()
@@ -98,6 +99,9 @@ class NST:
                 loss.backward()
 
                 run[0] += 1
+                if style_score.item() + content_score.item() < self.prev_img[0]:
+                    self.prev_img[0] = style_score.item() + content_score.item()
+                    self.prev_img[1] = input_img
                 if run[0] % 50 == 0:
                     print("run {}:".format(run))
                     print('Style Loss : {:4f} Content Loss: {:4f}'.format(
@@ -115,8 +119,9 @@ class NST:
 
         # return input_img
 
-    def test(self):
+    def compose(self):
         self.run_style_transfer()
+        return imshow(self.prev_img[1].data.clamp_(0, 1))
 
 
 
