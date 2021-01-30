@@ -1,5 +1,6 @@
 aiogram==2.11.2
 aiohttp==3.7.3
+asgiref==3.3.1
 async-timeout==3.0.1
 attrs==20.3.0
 Babel==2.9.0
@@ -16,7 +17,8 @@ pyparsing==2.4.7
 python-dateutil==2.8.1
 pytz==2020.5
 six==1.15.0
+torch
+torchaudio
+torchvision
 typing-extensions==3.7.4.3
 yarl==1.6.3
-https://download.pytorch.org/whl/cpu/torch-1.1.0-cp37-cp37m-linux_x86_64.whl
-https://download.pytorch.org/whl/cpu/torchvision-0.3.0-cp37-cp37m-linux_x86_64.whl

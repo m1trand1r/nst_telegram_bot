@@ -1,4 +1,4 @@
-# from configuration import BOT_TOKEN
+from configuration import BOT_TOKEN
 import io
 import logging
 
@@ -57,6 +57,7 @@ class ImgSaver:
 
 
 holder = ImgSaver()
+
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):

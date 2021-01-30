@@ -1,8 +1,7 @@
 .idea/
 venv/
 *.png
-model/__pycache__/
-model/test.py
-requirements.txt
 __pycache__/
 csa
+*.sh
+configuration.py
