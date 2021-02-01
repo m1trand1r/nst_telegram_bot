@@ -101,11 +101,11 @@ class NST:
                 if style_score.item() + content_score.item() < self.prev_img[0]:
                     self.prev_img[0] = style_score.item() + content_score.item()
                     self.prev_img[1] = input_img.clone()
-                if run[0] % 50 == 0:
-                    print("run {}:".format(run))
-                    print('Style Loss : {:4f} Content Loss: {:4f}'.format(
-                        style_score.item(), content_score.item()))
-                    print()
+                # if run[0] % 50 == 0:
+                #     print("run {}:".format(run))
+                #     print('Style Loss : {:4f} Content Loss: {:4f}'.format(
+                #         style_score.item(), content_score.item()))
+                #     print()
                     # imsave(input_img, style_score.item() + content_score.item())
                     # imshow(input_img, title='step photo')
 

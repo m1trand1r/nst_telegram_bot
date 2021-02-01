@@ -3,7 +3,11 @@ import io
 import logging
 
 from PIL import Image
+import asyncio
 from aiogram import Bot, types
+from aiogram.types import ReplyKeyboardRemove, \
+    ReplyKeyboardMarkup, KeyboardButton, \
+    InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher.filters import Text
@@ -35,12 +39,17 @@ dp.middleware.setup(LoggingMiddleware())
 
 @dp.message_handler(commands=['start'])
 async def process_start_command(message: types.Message):
-    await message.reply("Привет!\nНапиши мне что-нибудь!")
+    await message.reply("Привет!\nОтправь /help чтоб узнать список доступных команд.")
 
 
 @dp.message_handler(commands=['help'])
 async def process_help_command(message: types.Message):
-    await message.reply("Напиши мне что-нибудь, и я отпрпавлю этот текст тебе в ответ!")
+    help_message = 'Бот работает на сервере без GPU ускорителя, поэтому итоговое изображение будет с измененным ' \
+                   'разрешением для адекватного времени ответа.\n' \
+                   'Для начала работы отправьте команду /nst_start\n' \
+                   'Для отмены во время любого шага по переносу стиля отправьте сообщение с текстом cancel ' \
+                   '(не имеет разницы строчные или заглавные буквы)'
+    await message.reply(help_message)
 
 
 class ImageProcessor(StatesGroup):
@@ -54,6 +63,7 @@ class ImgSaver:
         self.style = None
         self.content = None
         self.res = None
+        self.starter = None
 
 
 holder = ImgSaver()
@@ -75,7 +85,7 @@ async def cmd_start(message: types.Message):
     NST model entry point
     """
     await ImageProcessor.style.set()
-    await message.reply("Hi there, let's start.\nSend style image for transfer.")
+    await message.reply("Давайте начнем.\nОтправьте изображение - стиль.")
 
 
 @dp.message_handler(state='*', commands='cancel')
@@ -87,16 +97,14 @@ async def cancel_handler(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
     if current_state is None:
         return
-
-    await bot.send_message(message.from_user.id, text=f'Cancelling state {current_state}')
+    # await bot.send_message(message.from_user.id, text=f'Cancelling state {current_state}')
 
     await state.finish()
-    await message.reply('Cancelled.')
+    await message.reply('Успешно отменено.')
 
 
 @dp.message_handler(state=ImageProcessor.style, content_types=types.ContentTypes.PHOTO)
 async def process_first_img(message: types.Message, state: FSMContext):
-
     file_id = message.photo[-1].file_id
     file_info = await bot.get_file(file_id)
     file_path = file_info.file_path
@@ -104,48 +112,54 @@ async def process_first_img(message: types.Message, state: FSMContext):
     img = Image.open(image_data)
     holder.style = img
     await ImageProcessor.next()
-    await message.answer('Send content image')
+    await message.answer('Отправьте изображение на которое будет переноситься стиль')
 
 
 @dp.message_handler(state=ImageProcessor.transfer, content_types=types.ContentTypes.PHOTO)
 async def process_second_img(message: types.Message, state: FSMContext):
-
     file_id = message.photo[-1].file_id
     file_info = await bot.get_file(file_id)
     file_path = file_info.file_path
     image_data = await bot.download_file(file_path)
     img = Image.open(image_data)
     holder.content = img
+
+    inline_kb = InlineKeyboardMarkup()
+    inline_btn = InlineKeyboardButton('Старт', callback_data='btn_start')
+    inline_kb.add(inline_btn)
     await ImageProcessor.next()
-    await message.answer('Send something to start transfer')
+    await message.answer('Нажмите на кнопку для начала переноса стиля', reply_markup=inline_kb)
 
 
-@dp.message_handler(lambda mess: mess.text, state=(ImageProcessor.style, ImageProcessor.transfer))
+@dp.message_handler(content_types=['voice', 'text', 'sticker'], state=(ImageProcessor.style, ImageProcessor.transfer))
 async def invalid_message(message: types.Message, state: FSMContext):
-    await message.answer('Send image, not text')
-    # message.photo.
+    await message.answer('Отправьте изображение')
 
 
-@dp.message_handler(state=ImageProcessor.res)
+@dp.message_handler(lambda mess: mess.text, state=ImageProcessor.res)
+async def invalid_message(message: types.Message, state: FSMContext):
+    await message.answer('Ожидайте 5 - 10 минут пока создается изображение.\n'
+                         'Вы получите новое сообщение с готовым изображением')
+
+
+# @dp.message_handler(state=ImageProcessor.res)
+@dp.callback_query_handler(lambda c: c.data.startswith('btn'), state=ImageProcessor.res)
 async def final_image(message: types.Message, state: FSMContext):
-
-    await message.answer('Wait for 5 - 10 minutes, you will get message with ready picture')
+    await bot.send_message(message.from_user.id, text='Ожидайте 5 - 10 минут пока создается изображение.\n'
+                                                      'Вы получите новое сообщение с готовым изображением')
+    # await message.answer('Ожидайте 5 - 10 минут пока создается изображение.\n'
+    #                      'Вы получите новое сообщение с готовым изображением')
     style_transfer = NST(holder.style, holder.content)
     holder.res = sync_to_async(style_transfer.compose)()
-    img_data = await holder.res  # изображение PIL
+    holder.starter = await holder.res  # изображение PIL
     bio = io.BytesIO()
     bio.name = 'image.jpeg'
-    img_data.save(bio, 'JPEG')
+    holder.starter.save(bio, 'JPEG')
     bio.seek(0)
-        # await message.answer('Result of style transfer')
-    await bot.send_photo(message.from_user.id, photo=bio, caption='Result of style transfer')
+    await bot.send_photo(message.from_user.id, photo=bio, caption='Результат переноса стиля')
+    # await asyncio.sleep(10)
     await state.finish()
     # await state.update_data(res=style_transfer.compose())
-
-
-@dp.message_handler()
-async def echo_message(msg: types.Message):
-    await bot.send_message(msg.from_user.id, msg.text)
 
 
 # async def on_startup(dp: 'Dispatcher') -> None:
