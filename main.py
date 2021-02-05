@@ -88,8 +88,8 @@ async def cmd_start(message: types.Message):
     await message.reply("Давайте начнем.\nОтправьте изображение - стиль.")
 
 
-@dp.message_handler(state='*', commands='cancel')
-@dp.message_handler(Text(equals='cancel', ignore_case=True), state='*')
+@dp.message_handler(state=(ImageProcessor.style, ImageProcessor.transfer), commands='cancel')
+@dp.message_handler(Text(equals='cancel', ignore_case=True), state=(ImageProcessor.style, ImageProcessor.transfer))
 async def cancel_handler(message: types.Message, state: FSMContext):
     """
     Allow user to cancel any action
@@ -138,8 +138,11 @@ async def invalid_message(message: types.Message, state: FSMContext):
 
 @dp.message_handler(lambda mess: mess.text, state=ImageProcessor.res)
 async def invalid_message(message: types.Message, state: FSMContext):
-    await message.answer('Ожидайте 5 - 10 минут пока создается изображение.\n'
-                         'Вы получите новое сообщение с готовым изображением')
+    if message.text == '/nst_start':
+        await message.answer('Для начала нового переноса стиля ожидайте окончание предыдущего переноса стиля.')
+    else:
+        await message.answer('Ожидайте 5 - 10 минут пока создается изображение.\n'
+                             'Вы получите новое сообщение с готовым изображением')
 
 
 # @dp.message_handler(state=ImageProcessor.res)
